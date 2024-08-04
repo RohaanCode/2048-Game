@@ -170,14 +170,14 @@
             rearrange()
         }
 
-        document.addEventListener("mousedown", e => {
+        document.addEventListener("touchstart", e => {
 
             document.body.style.cursor = "grabbing"
 
             let startX = e.clientX
             let startY = e.clientY
 
-            document.addEventListener("mouseup", swipeEnd)
+            document.addEventListener("touchend", swipeEnd)
             function swipeEnd(e) {
                 document.body.style.cursor = "grab"
 
