@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 Game</title>
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            font-family: gilroy;
+            user-select: none;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            cursor: grab;
+        }
+
+        #container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            align-items: start;
+            gap: .5rem;
+            margin: auto;
+        }
+
+        .box {
+            width: 8rem;
+            height: 8rem;
+            background-color: #58585c;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+            font-size: 56px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+        <div class="box"></div>
+    </div>
+
+    <script>
+        const boxes = Array.from(document.querySelectorAll(".box"))
+
+        let colIndex = 0
+        let rowIndex = 0
+
+        for (let i = 0; i < boxes.length; i++) {
+            const box = boxes[i]
+            box.isReserved = false
+
+            box.$colIndex = colIndex
+            box.$rowIndex = rowIndex
+
+            if ((i + 1) % 4 === 0) {
+                colIndex = 0
+                rowIndex++
+            } else {
+                colIndex++
+            }
+        }
+
+        let boxIndicesToAddTileTo = []
+
+        while (boxIndicesToAddTileTo.length < 4) {
+            let randomIndex = Math.floor(Math.random() * 16)
+
+            if (!boxIndicesToAddTileTo.includes(randomIndex)) {
+                boxIndicesToAddTileTo.push(randomIndex)
+
+                let tile = document.createElement("div")
+                tile.className = "tile"
+                tile.innerText = 2
+                boxes[randomIndex].append(tile)
+                boxes[randomIndex].isReserved = true
+            }
+        }
+
+        function rearrange() {
+            let tiles = Array.from(document.querySelectorAll(".tile"))
+
+            tiles.forEach(tile => {
+                if (tile.willMove) {
+                    tile.remove()
+                    boxes[tile.targetBoxIndex].appendChild(tile)
+                }
+            })
+        }
+
+        function rightSwipe() {
+            let tiles = Array.from(document.querySelectorAll(".tile"))
+            tiles.reverse()
+
+            tiles.forEach(tile => {
+                let colIndex = tile.parentElement.$colIndex
+                let rowIndex = tile.parentElement.$rowIndex
+
+                let potentialTargets = []
+
+                for (let i = rowIndex * 4 + colIndex + 1; i < (rowIndex + 1) * 4; i++) {
+                    let target = boxes[i]
+
+                    if (!target.isReserved) {
+                        tile.parentElement.isReserved = false
+                        potentialTargets.push([boxes[i], i])
+                    }
+                }
+
+                if (potentialTargets.length > 0) {                    
+                    potentialTargets[potentialTargets.length - 1][0].isReserved = true
+
+                    tile.willMove = true
+                    tile.targetBoxIndex = potentialTargets[potentialTargets.length - 1][1]
+                }
+            })
+
+            rearrange()
+        }
+
+        function leftSwipe() {
+            let tiles = Array.from(document.querySelectorAll(".tile"))
+
+            tiles.forEach(tile => {
+                let colIndex = tile.parentElement.$colIndex
+                let rowIndex = tile.parentElement.$rowIndex
+
+                let potentialTargets = []
+
+                for (let i = rowIndex * 4 + colIndex - 1; i > rowIndex * 4 - 1; i--) {
+                    let target = boxes[i]
+
+                    if (!target.isReserved) {
+                        tile.parentElement.isReserved = false
+                        potentialTargets.push([boxes[i], i])
+                    }
+                }
+
+                if (potentialTargets.length > 0) {                    
+                    potentialTargets[potentialTargets.length - 1][0].isReserved = true
+
+                    tile.willMove = true
+                    tile.targetBoxIndex = potentialTargets[potentialTargets.length - 1][1]
+                }
+            })
+
+            rearrange()
+        }
+
+        document.addEventListener("mousedown", e => {
+
+            document.body.style.cursor = "grabbing"
+
+            let startX = e.clientX
+            let startY = e.clientY
+
+            document.addEventListener("mouseup", swipeEnd)
+            function swipeEnd(e) {
+                document.body.style.cursor = "grab"
+
+                let endX = e.clientX
+                let endY = e.clientY
+
+                let withSignChangeX = endX - startX
+                let withSignChangeY = endY - startY
+
+                let withoutSignChangeX = Math.abs(endX - startX)
+                let withoutSignChangeY = Math.abs(endY - startY)
+
+                if (withoutSignChangeX > 50 || withoutSignChangeY > 50) {
+                    if (withoutSignChangeX > withoutSignChangeY) {
+                        if (withSignChangeX > 0) {
+                            rightSwipe()
+                        } else {
+                            leftSwipe()
+                        }
+                    } else if (withoutSignChangeY > withoutSignChangeX) {
+                        if (withSignChangeY > 0) {
+                            downSwipe()
+                        } else {
+                            upSwipe()
+                        }
+                    } else if (withoutSignChangeY === withoutSignChangeX) {
+                        document.write("hello")
+                    }
+                }
+
+                document.removeEventListener("mouseup", swipeEnd)
+            }
+        })
+
+        document.addEventListener("keyup", e => {
+            if (e.key === "ArrowRight" || e.key === "d") {
+                rightSwipe()
+            }
+
+            if (e.key === "ArrowLeft" || e.key === "a") {
+                leftSwipe()
+            }
+        })
+    </script>
+</body>
+
+</html>
